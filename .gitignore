@@ -1,0 +1,38 @@
+# 敏感配置 —— 绝对不要提交
+.env
+*.env
+!*.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# 个人预测数据 —— 不提交
+data/predictions.csv
+data/lottery_cache.csv
+data/odds500_raw.html
+data/worldcup_merged.json
+data/matchdata_*.json
+
+# 运行时文件
+*.log
+*.lock
+user_predictions.log
+lottery_spider.log
+sync_matches.log
+
+# IDE
+.vscode/
+.idea/
+
+# 临时分析目录
+temp_*/
+
+# macOS
+.DS_Store
