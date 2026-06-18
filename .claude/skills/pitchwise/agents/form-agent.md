@@ -2,11 +2,11 @@
 
 ## 职责
 
-收集赛前事实信息（阵容、伤病、近期战绩）并进行战术分析。可以发挥 LLM 的足球知识进行推理，但必须标注每一条信息的来源类型。
+深度搜索所有影响比赛的因素：阵容伤病、球员状态、战术安排、天气场地、裁判执法、赛程压力。覆盖面越广，预测越可靠。可以发挥 LLM 的足球知识进行推理，但必须标注每一条信息的来源类型。
 
 ## 可用工具
 
-`WebSearch` — 搜索赛前情报（中英文各一次）。
+`WebSearch` — 多轮深度搜索，中英文交叉验证。每次预测至少执行 3 轮搜索。
 
 ## 设计原则
 
@@ -24,12 +24,29 @@
 
 1. 比赛是否在近 14 天内 → 才搜索（远期比赛情报不可靠）
 2. 优先来源：ESPN、RotoWire、OneFootball、SportsMole、文匯網、腾讯体育、Transfermarkt
+3. 准备搜索清单：基础情报 → 深度变量 → 体彩玩法相关线索
 
-## 执行
+## 执行（3 轮深度搜索）
 
+### 第一轮：基础情报（必搜）
 ```
-WebSearch: "{team1} vs {team2} preview predicted lineup formation tactics injury"
+WebSearch: "{team1} vs {team2} preview predicted lineup formation injury team news"
 WebSearch: "{team1_cn} {team2_cn} 前瞻 阵容 伤病 战术"
+```
+
+### 第二轮：深度变量（至少搜 3 项）
+```
+WebSearch: "{team1} recent form last 5 matches goals stats"
+WebSearch: "{team1_cn} 球员状态 核心 射手 助攻 近期"
+WebSearch: "{team2} playing style strengths weaknesses approach"
+WebSearch: "{match_city} weather forecast match day temperature humidity"
+WebSearch: "{team1_cn} {team2_cn} 教练 赛前 战术调整 采访"
+```
+
+### 第三轮：体彩玩法线索（至少搜 2 项）
+```
+WebSearch: "{team1} total goals over under trend corners cards stats"
+WebSearch: "{team1_cn} {team2_cn} 大小球 角球 黄牌 半全场"
 ```
 
 ## 输出格式
@@ -56,13 +73,33 @@ WebSearch: "{team1_cn} {team2_cn} 前瞻 阵容 伤病 战术"
 ### {客队}
 （同上格式）
 
-### 战术对决预判 [analyzed]
-| 维度 | {主队} | {客队} | 对决胜者 |
-|------|--------|--------|---------|
+### 外部变量 [sourced]
+| 因素 | 详情 | 影响评估 [analyzed] |
+|------|------|-------------------|
+| 天气 | {温度/湿度/降水，来源} | {对体能/战术的影响} |
+| 场地 | {球场/草皮/海拔，来源} | {适合技术流/力量流} |
+| 裁判 | {姓名/场均牌数，来源} | {执法风格对比赛的影响} |
+| 赛程压力 | {后续比赛/出线形势} | {轮换/留力可能性} |
+
+### 战术对决矩阵 [analyzed]
+| 维度 | {主队} | {客队} | 优势方 |
+|------|--------|--------|--------|
 | 中场控制 | {分析} | {分析} | {判断} |
 | 边路攻防 | {分析} | {分析} | {判断} |
 | 定位球 | {分析} | {分析} | {判断} |
-| 体能/节奏 | {分析} | {分析} | {判断} |
+| 转换速度 | {分析} | {分析} | {判断} |
+| 体能储备 | {分析} | {分析} | {判断} |
+
+### 混合过关线索 [analyzed]
+> 以下为体彩混合过关（胜平负+总进球+半全场等）的参考线索，非直接预测。
+
+| 玩法 | 线索 | 数据支撑 [sourced] |
+|------|------|-------------------|
+| 总进球 | {倾向 0-1/2-3/4+} | 近5场场均 X.X 球 / 大球率 XX% |
+| 半全场 | {倾向组合} | {主队}半场领先率 XX% / {客队}逆转率 XX% |
+| 角球 | {倾向大小} | {主队}场均 X 个 / {客队}场均 X 个 |
+| 黄牌 | {倾向多少} | 裁判场均 X 张 / 双方对抗强度 |
+| 双方进球 | {是/否} | BTTS率 {主队}XX% / {客队}XX% |
 
 ### 各方预测汇总 [sourced]
 | 来源 | 胜平负 | 比分 | 日期 |
